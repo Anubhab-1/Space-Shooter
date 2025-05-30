@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Defender</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #0f0f23, #1a1a2e);
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 160px 30px, #fff, transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            animation: twinkle 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes thruster {
+            0% { 
+                height: 12px; 
+                opacity: 0.8;
+                transform: translateX(-50%) scale(1);
+            }
+            100% { 
+                height: 18px; 
+                opacity: 1;
+                transform: translateX(-50%) scale(1.1);
+            }
+        }
+
+        .player {
+            position: absolute;
+            width: 45px;
+            height: 55px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, #4a90e2 0%, #2c5aa0 40%, #1e3a8a  70%, #111827 100%);
+            clip-path: polygon(50% 0%, 35% 25%, 15% 85%, 25% 100%, 75% 100%, 85% 85%, 65% 25%);
+            box-shadow: 
+                0 0 20px rgba(74, 144, 226, 0.6),
+                inset 0 -10px 10px rgba(0, 0, 0, 0.3);
+            transition: left 0.1s ease;
+        }
+
+        .player::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 20px;
+            background: linear-gradient(180deg, #60a5fa, #3b82f6);
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(96, 165, 250, 0.8);
+        }
+
+        .player::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 15px;
+            background: linear-gradient(180deg, #fbbf24, #f59e0b, #dc2626);
+            border-radius: 50% 50% 20% 20%;
+            animation: thruster 0.1s ease-in-out infinite alternate;
+            filter: blur(1px);
+        }
+
+        .bullet {
+            position: absolute;
+            width: 6px;
+            height: 18px;
+            background: linear-gradient(180deg, #22d3ee 0%, #0891b2 50%, #155e75 100%);
+            border-radius: 3px 3px 0 0;
+            box-shadow: 
+                0 0 12px rgba(34, 211, 238, 0.9),
+                0 0 6px rgba(34, 211, 238, 0.6);
+        }
+
+        .bullet::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3px;
+            height: 8px;
+            background: linear-gradient(180deg, #fde047, #eab308);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(253, 224, 71, 0.8);
+        }
+
+        .enemy {
+            position: absolute;
+            width: 40px;
+            height: 32px;
+            background: 
+                linear-gradient(135deg, #ef4444 0%, #dc2626 25%, #991b1b 100%);
+            clip-path: polygon(50% 100%, 25% 80%, 0% 50%, 10% 20%, 30% 0%, 70% 0%, 90% 20%, 100% 50%, 75% 80%);
+            box-shadow: 
+                0 0 15px rgba(239, 68, 68, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            animation: enemyHover 2s ease-in-out infinite alternate;
+        }
+
+        .enemy::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 6px;
+            background: linear-gradient(90deg, #60a5fa, #3b82f6, #1d4ed8);
+            border-radius: 3px;
+            box-shadow: 0 0 8px rgba(96, 165, 250, 0.8);
+        }
+
+        .enemy::after {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 4px;
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            border-radius: 2px;
+            box-shadow: 0 0 6px rgba(251, 191, 36, 0.7);
+        }
+
+        .enemy.purple {
+            background: linear-gradient(135deg, #a855f7 0%, #9333ea 25%, #7c3aed 100%);
+            box-shadow: 
+                0 0 15px rgba(168, 85, 247, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        }
+
+        .enemy.green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 25%, #047857 100%);
+            box-shadow: 
+                0 0 15px rgba(16, 185, 129, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        }
+
+        .enemy.orange {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 25%, #c2410c 100%);
+            box-shadow: 
+                0 0 15px rgba(249, 115, 22, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        }
+
+        .enemy.cyan {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 25%, #0e7490 100%);
+            box-shadow: 
+                0 0 15px rgba(6, 182, 212, 0.6),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #ffaa00;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ff88;
+            font-size: 18px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+            z-index: 100;
+        }
+
+        .hearts {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+            align-items: center;
+        }
+
+        .heart {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+            position: relative;
+            display: inline-block;
+            margin: 0 2px;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+            animation: heartbeat 2s ease-in-out infinite;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        .heart:before,
+        .heart:after {
+            content: none; /* Remove the pseudo-elements */
+        }
+
+        .heart.lost {
+            background: linear-gradient(45deg, #6b7280, #4b5563);
+            box-shadow: 0 0 5px rgba(107, 114, 128, 0.3);
+            animation: none;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { 
+                transform: rotate(-45deg) scale(1);
+            }
+            50% { 
+                transform: rotate(-45deg) scale(1.1);
+            }
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #ff4444;
+            font-size: 32px;
+            text-shadow: 0 0 20px rgba(255, 68, 68, 0.8);
+            z-index: 200;
+            display: none;
+        }
+
+        .restart-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            border: none;
+            border-radius: 5px;
+            color: #000;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+            transition: transform 0.1s;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .power-up {
+            position: absolute;
+            width: 18px;
+            height: 25px;
+            background: linear-gradient(180deg, #10b981 0%, #059669 40%, #047857 70%, #065f46 100%);
+            border-radius: 3px 3px 8px 8px;
+            box-shadow: 
+                0 0 15px rgba(16, 185, 129, 0.8),
+                inset 0 -3px 5px rgba(0, 0, 0, 0.3);
+            animation: fuelFloat 2s ease-in-out infinite alternate;
+        }
+
+        .power-up::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 8px;
+            background: linear-gradient(180deg, #34d399, #10b981);
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+        }
+
+        .power-up::after {
+            content: 'F';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: bold;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes fuelFloat {
+            0% { 
+                transform: translateY(0px) scale(1);
+                box-shadow: 0 0 15px rgba(16, 185, 129, 0.8);
+            }
+            100% { 
+                transform: translateY(-5px) scale(1.05);
+                box-shadow: 0 0 20px rgba(16, 185, 129, 1);
+            }
+        }
+
+        @keyframes enemyHover {
+            0% { 
+                transform: translateY(0px);
+            }
+            100% { 
+                transform: translateY(-3px);
+            }
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #00ff88;
+            font-size: 12px;
+            text-align: right;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <div class="stars"></div>
+        
+        <div class="ui">
+            <div>Score: <span id="score">0</span></div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                <span>Lives:</span>
+                <div class="hearts" id="hearts">
+                    <div class="heart"></div>
+                    <div class="heart"></div>
+                    <div class="heart"></div>
+                </div>
+            </div>
+            <div>Level: <span id="level">1</span></div>
+        </div>
+
+        <div class="instructions">
+            <div>← → Arrow Keys: Move</div>
+            <div>Spacebar: Shoot</div>
+            <div>Collect green fuel for triple-shot!</div>
+        </div>
+
+        <div class="player" id="player"></div>
+
+        <div class="game-over" id="gameOver">
+            <div>GAME OVER</div>
+            <div style="font-size: 18px; margin-top: 10px;">Final Score: <span id="finalScore">0</span></div>
+            <button class="restart-btn" onclick="restartGame()">RESTART</button>
+        </div>
+    </div>
+
+    <script>
+        class Game {
+            constructor() {
+                this.player = document.getElementById('player');
+                this.gameContainer = document.getElementById('gameContainer');
+                this.score = 0;
+                this.lives = 3;
+                this.level = 1;
+                this.bullets = [];
+                this.enemies = [];
+                this.particles = [];
+                this.powerUps = [];
+                this.playerX = 377;
+                this.gameRunning = true;
+                this.keys = {};
+                this.enemySpeed = 1;
+                this.enemySpawnRate = 0.02;
+                this.powerUpActive = false;
+                this.powerUpTimer = 0;
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.gameLoop();
+            }
+
+            setupEventListeners() {
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.code] = true;
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        this.shoot();
+                    }
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    this.keys[e.code] = false;
+                });
+            }
+
+            shoot() {
+                if (!this.gameRunning) return;
+                
+                const bullet = document.createElement('div');
+                bullet.className = 'bullet';
+                bullet.style.left = (this.playerX + 20) + 'px';
+                bullet.style.bottom = '75px';
+                this.gameContainer.appendChild(bullet);
+                this.bullets.push({
+                    element: bullet,
+                    x: this.playerX + 20,
+                    y: 525
+                });
+
+                // Double shot power-up
+                if (this.powerUpActive) {
+                    const bullet2 = document.createElement('div');
+                    bullet2.className = 'bullet';
+                    bullet2.style.left = (this.playerX + 10) + 'px';
+                    bullet2.style.bottom = '75px';
+                    this.gameContainer.appendChild(bullet2);
+                    this.bullets.push({
+                        element: bullet2,
+                        x: this.playerX + 10,
+                        y: 525
+                    });
+
+                    const bullet3 = document.createElement('div');
+                    bullet3.className = 'bullet';
+                    bullet3.style.left = (this.playerX + 30) + 'px';
+                    bullet3.style.bottom = '75px';
+                    this.gameContainer.appendChild(bullet3);
+                    this.bullets.push({
+                        element: bullet3,
+                        x: this.playerX + 30,
+                        y: 525
+                    });
+                }
+            }
+
+            spawnEnemy() {
+                const enemy = document.createElement('div');
+                enemy.className = 'enemy';
+                
+                // Randomly assign different enemy ship colors
+                const colors = ['', 'purple', 'green', 'orange', 'cyan'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                if (randomColor) {
+                    enemy.classList.add(randomColor);
+                }
+                
+                const x = Math.random() * 760;
+                enemy.style.left = x + 'px';
+                enemy.style.top = '0px';
+                this.gameContainer.appendChild(enemy);
+                this.enemies.push({
+                    element: enemy,
+                    x: x,
+                    y: 0
+                });
+            }
+
+            spawnPowerUp() {
+                if (Math.random() < 0.005) {
+                    const powerUp = document.createElement('div');
+                    powerUp.className = 'power-up';
+                    const x = Math.random() * 780;
+                    powerUp.style.left = x + 'px';
+                    powerUp.style.top = '0px';
+                    this.gameContainer.appendChild(powerUp);
+                    this.powerUps.push({
+                        element: powerUp,
+                        x: x,
+                        y: 0
+                    });
+                }
+            }
+
+            createParticles(x, y, color = '#ffaa00') {
+                for (let i = 0; i < 8; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.background = color;
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    this.gameContainer.appendChild(particle);
+                    
+                    const angle = (Math.PI * 2 * i) / 8;
+                    const speed = 2 + Math.random() * 3;
+                    
+                    this.particles.push({
+                        element: particle,
+                        x: x,
+                        y: y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: 30
+                    });
+                }
+            }
+
+            updatePlayer() {
+                if (this.keys['ArrowLeft'] && this.playerX > 0) {
+                    this.playerX -= 5;
+                }
+                if (this.keys['ArrowRight'] && this.playerX < 755) {
+                    this.playerX += 5;
+                }
+                this.player.style.left = this.playerX + 'px';
+            }
+
+            updateBullets() {
+                this.bullets = this.bullets.filter(bullet => {
+                    bullet.y -= 8;
+                    bullet.element.style.bottom = (600 - bullet.y) + 'px';
+                    
+                    if (bullet.y < -20) {
+                        bullet.element.remove();
+                        return false;
+                    }
+                    return true;
+                });
+            }
+
+            updateEnemies() {
+                this.enemies = this.enemies.filter(enemy => {
+                    enemy.y += this.enemySpeed;
+                    enemy.element.style.top = enemy.y + 'px';
+                    
+                    if (enemy.y > 620) {
+                        enemy.element.remove();
+                        return false;
+                    }
+                    return true;
+                });
+            }
+
+            updatePowerUps() {
+                this.powerUps = this.powerUps.filter(powerUp => {
+                    powerUp.y += 2;
+                    powerUp.element.style.top = powerUp.y + 'px';
+                    
+                    if (powerUp.y > 620) {
+                        powerUp.element.remove();
+                        return false;
+                    }
+                    return true;
+                });
+            }
+
+            updateParticles() {
+                this.particles = this.particles.filter(particle => {
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    particle.life--;
+                    
+                    particle.element.style.left = particle.x + 'px';
+                    particle.element.style.top = particle.y + 'px';
+                    particle.element.style.opacity = particle.life / 30;
+                    
+                    if (particle.life <= 0) {
+                        particle.element.remove();
+                        return false;
+                    }
+                    return true;
+                });
+            }
+
+            checkCollisions() {
+                // Bullet-Enemy collisions
+                this.bullets.forEach((bullet, bulletIndex) => {
+                    this.enemies.forEach((enemy, enemyIndex) => {
+                        if (bullet.x > enemy.x - 10 && bullet.x < enemy.x + 50 &&
+                            bullet.y > enemy.y - 10 && bullet.y < enemy.y + 42) {
+                            
+                            this.createParticles(enemy.x + 20, enemy.y + 16, '#ff4444');
+                            bullet.element.remove();
+                            enemy.element.remove();
+                            this.bullets.splice(bulletIndex, 1);
+                            this.enemies.splice(enemyIndex, 1);
+                            this.score += 10;
+                            this.updateScore();
+                        }
+                    });
+                });
+
+                // Player-Enemy collisions
+                this.enemies.forEach((enemy, enemyIndex) => {
+                    if (this.playerX < enemy.x + 40 && this.playerX + 45 > enemy.x &&
+                        540 < enemy.y + 32 && 600 > enemy.y) {
+                        
+                        this.createParticles(enemy.x + 20, enemy.y + 16, '#ff4444');
+                        enemy.element.remove();
+                        this.enemies.splice(enemyIndex, 1);
+                        this.lives--;
+                        this.updateLives();
+                        
+                        if (this.lives <= 0) {
+                            this.gameOver();
+                        }
+                    }
+                });
+
+                // Player-PowerUp collisions
+                this.powerUps.forEach((powerUp, powerUpIndex) => {
+                    if (this.playerX < powerUp.x + 18 && this.playerX + 45 > powerUp.x &&
+                        540 < powerUp.y + 25 && 600 > powerUp.y) {
+                        
+                        this.createParticles(powerUp.x + 9, powerUp.y + 12, '#10b981');
+                        powerUp.element.remove();
+                        this.powerUps.splice(powerUpIndex, 1);
+                        this.powerUpActive = true;
+                        this.powerUpTimer = 300; // 5 seconds at 60fps
+                        this.score += 50;
+                        this.updateScore();
+                    }
+                });
+            }
+
+            updateScore() {
+                document.getElementById('score').textContent = this.score;
+                
+                // Level progression
+                const newLevel = Math.floor(this.score / 200) + 1;
+                if (newLevel > this.level) {
+                    this.level = newLevel;
+                    this.enemySpeed += 0.5;
+                    this.enemySpawnRate += 0.005;
+                    document.getElementById('level').textContent = this.level;
+                }
+            }
+
+            updateLives() {
+                const hearts = document.querySelectorAll('.heart');
+                hearts.forEach((heart, index) => {
+                    if (index >= this.lives) {
+                        heart.classList.add('lost');
+                    } else {
+                        heart.classList.remove('lost');
+                    }
+                });
+            }
+
+            gameOver() {
+                this.gameRunning = false;
+                document.getElementById('finalScore').textContent = this.score;
+                document.getElementById('gameOver').style.display = 'block';
+            }
+
+            gameLoop() {
+                if (!this.gameRunning) return;
+
+                this.updatePlayer();
+                this.updateBullets();
+                this.updateEnemies();
+                this.updateParticles();
+                this.updatePowerUps();
+                this.checkCollisions();
+
+                // Spawn enemies
+                if (Math.random() < this.enemySpawnRate) {
+                    this.spawnEnemy();
+                }
+
+                // Spawn power-ups
+                this.spawnPowerUp();
+
+                // Update power-up timer
+                if (this.powerUpActive) {
+                    this.powerUpTimer--;
+                    if (this.powerUpTimer <= 0) {
+                        this.powerUpActive = false;
+                    }
+                }
+
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+
+        let game;
+
+        function startGame() {
+            game = new Game();
+        }
+
+        function restartGame() {
+            // Clear all game elements
+            document.querySelectorAll('.bullet, .enemy, .particle, .power-up').forEach(el => el.remove());
+            document.getElementById('gameOver').style.display = 'none';
+            
+            // Reset hearts to full
+            const hearts = document.querySelectorAll('.heart');
+            hearts.forEach(heart => heart.classList.remove('lost'));
+            
+            startGame();
+        }
+
+        // Start the game
+        startGame();
+    </script>
+</body>
+</html>
