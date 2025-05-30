@@ -353,6 +353,48 @@
             text-align: right;
             opacity: 0.7;
         }
+
+        .mobile-controls {
+            display: none;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            gap: 20px;
+        }
+
+        .ctrl-btn {
+            width: 56px;
+            height: 56px;
+            margin: 0 8px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #222;
+            font-size: 2rem;
+            font-weight: bold;
+            box-shadow: 0 0 10px #00ff8855;
+            opacity: 0.85;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .ctrl-btn:active {
+            background: #00cc6a;
+            transform: scale(0.95);
+        }
+
+        @media (max-width: 900px) {
+            .game-container {
+                width: 98vw;
+                height: 70vw;
+                max-width: 100vw;
+                max-height: 90vh;
+            }
+            .mobile-controls {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body>
@@ -376,6 +418,12 @@
             <div>← → Arrow Keys: Move</div>
             <div>Spacebar: Shoot</div>
             <div>Collect green fuel for triple-shot!</div>
+        </div>
+
+        <div class="mobile-controls" id="mobileControls">
+            <button id="leftBtn" class="ctrl-btn">◀</button>
+            <button id="shootBtn" class="ctrl-btn">⦿</button>
+            <button id="rightBtn" class="ctrl-btn">▶</button>
         </div>
 
         <div class="player" id="player"></div>
@@ -426,6 +474,21 @@
 
                 document.addEventListener('keyup', (e) => {
                     this.keys[e.code] = false;
+                });
+
+                // Mobile controls
+                document.getElementById('leftBtn').addEventListener('click', () => {
+                    this.keys['ArrowLeft'] = true;
+                    setTimeout(() => this.keys['ArrowLeft'] = false, 100);
+                });
+
+                document.getElementById('rightBtn').addEventListener('click', () => {
+                    this.keys['ArrowRight'] = true;
+                    setTimeout(() => this.keys['ArrowRight'] = false, 100);
+                });
+
+                document.getElementById('shootBtn').addEventListener('click', () => {
+                    this.shoot();
                 });
             }
 
@@ -710,8 +773,42 @@
 
         let game;
 
+        // Touch controls for mobile
+        function setupMobileControls(game) {
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const shootBtn = document.getElementById('shootBtn');
+
+            // Move left
+            leftBtn.addEventListener('touchstart', e => {
+                e.preventDefault();
+                game.keys['ArrowLeft'] = true;
+            });
+            leftBtn.addEventListener('touchend', e => {
+                e.preventDefault();
+                game.keys['ArrowLeft'] = false;
+            });
+
+            // Move right
+            rightBtn.addEventListener('touchstart', e => {
+                e.preventDefault();
+                game.keys['ArrowRight'] = true;
+            });
+            rightBtn.addEventListener('touchend', e => {
+                e.preventDefault();
+                game.keys['ArrowRight'] = false;
+            });
+
+            // Shoot
+            shootBtn.addEventListener('touchstart', e => {
+                e.preventDefault();
+                game.shoot();
+            });
+        }
+
         function startGame() {
             game = new Game();
+            setupMobileControls(game);
         }
 
         function restartGame() {
